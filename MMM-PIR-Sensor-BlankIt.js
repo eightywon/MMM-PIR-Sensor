@@ -1,8 +1,8 @@
-'use strict';
+/* global Module */
 
 /* Magic Mirror
- * Module: MMM-PIR-Sensor-BlankIt
- * 
+ * Module: MMM-PIR-Sensor
+ *
  * By Scott Neitzel http://eightywon.com
  *
  * Forked from:
@@ -11,40 +11,40 @@
  * MIT Licensed.
  */
 
-const NodeHelper = require('node_helper');
-const Gpio = require('onoff').Gpio;
-const exec = require('child_process').exec;
+Module.register('MMM-PIR-Sensor-BlankIt',{
 
-module.exports = NodeHelper.create({
-  start: function () {
-    this.started = false;
-  },
+	requiresVersion: "2.1.0",
 
-  // Subclass socketNotificationReceived received.
-  socketNotificationReceived: function(notification, payload) {
-    if (notification === 'CONFIG' && this.started == false) {
-     const self = this;
-     this.config = payload;
+	defaults: {
+		sensorPIN: 22,
+		invertSensorValue: false,
+		relayPIN: false,
+		relayOnState: 1,
+		powerSaving: true,
+		powerSavingDelay: 0,
+	},
 
-     // Setup value which represent on and off
-     const valueOn = this.config.invertSensorValue ? 0 : 1;
-     const valueOff = this.config.invertSensorValue ? 1 : 0;
+	// Override socket notification handler.
+	socketNotificationReceived: function(notification, payload) {
+		if (notification === "USER_PRESENCE"){
+			this.sendNotification(notification, payload)
+		}
+	},
 
-     //Setup pins
-     this.pir = new Gpio(this.config.sensorPIN, 'in', 'both');
+	notificationReceived: function(notification, payload) {
+		if (notification === "SCREEN_WAKEUP"){
+			this.sendNotification(notification, payload)
+		}
+	},
 
-     //Detected movement
-     this.pir.watch(function(err, value) {
-      if (value==valueOn) {
-       clearTimeout(self.deactivateMonitorTimeout);
-       self.sendSocketNotification("USER_PRESENCE",true);
-      } else if (value==valueOff) {
-       self.deactivateMonitorTimeout=setTimeout(function() {
-        self.sendSocketNotification("USER_PRESENCE",false);
-       }, self.config.powerSavingDelay*1000);
-      }
-     });
-     this.started=true;
-    }
-  }
+	start: function() {
+		if (this.config.relayOnState == 1){
+			this.config.relayOffState = 0
+		}
+		else if (this.config.relayOnState == 0){
+			this.config.relayOffState = 1
+		}
+		this.sendSocketNotification('CONFIG', this.config);
+		Log.info('Starting module: ' + this.name);
+	}
 });
