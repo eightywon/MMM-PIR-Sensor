@@ -3,7 +3,7 @@
 /* Magic Mirror
  * Module: MMM-PIR-Sensor-BlankIt
  * 
- * By Scott Neitzel http://eightywon.org
+ * By Scott Neitzel http://eightywon.com
  *
  * Forked from:
  * By Paul-Vincent Roll http://paulvincentroll.com
